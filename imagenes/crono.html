@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronograma Visual - JOVI S.A.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-card: #1A1A1A;
+            --accent-peach: #F6A88A;
+            --accent-peach-light: rgba(246, 168, 138, 0.2);
+            --text-light: #F5F5F5;
+            --text-muted: #888888;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .gantt-container {
+            width: 1400px; /* Ancho fijo ideal para capturas de pantalla */
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+        }
+
+        .gantt-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-peach);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .gantt-wrapper {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* --- Cabeceras --- */
+        .header-col {
+            background-color: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .header-task-title {
+            padding: 30px 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: flex-end;
+            height: 100%;
+        }
+
+        .header-timeline {
+            display: flex;
+            flex-direction: column;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .years-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            text-align: center;
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            color: var(--accent-peach);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .year-label {
+            padding: 15px 0;
+            border-right: 1px solid var(--border-color);
+        }
+        .year-label:last-child { border-right: none; }
+
+        .quarters-row {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .quarter-label {
+            padding: 10px 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .quarter-label:last-child { border-right: none; }
+
+        /* --- Filas de Tareas --- */
+        .gantt-row {
+            display: contents; /* Permite que los hijos se alineen al grid principal */
+        }
+
+        .task-info {
+            padding: 25px 20px;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .task-name {
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .task-dept {
+            font-size: 0.85rem;
+            color: var(--accent-peach);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .task-timeline {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            background-image: repeating-linear-gradient(
+                to right,
+                transparent,
+                transparent calc(100% / 12 - 1px),
+                rgba(255, 255, 255, 0.03) calc(100% / 12 - 1px),
+                rgba(255, 255, 255, 0.03) calc(100% / 12)
+            );
+        }
+
+        /* --- Barras de Tiempo --- */
+        .bar {
+            background-color: var(--accent-peach);
+            border-radius: 6px;
+            margin: 25px 5px;
+            box-shadow: 0 4px 15px var(--accent-peach-light);
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        /* Posiciones específicas de cada acción (T1-T12) */
+        .bar-1 { grid-column: 1 / 3; }  /* Año 1: T1 - T2 */
+        .bar-2 { grid-column: 2 / 3; }  /* Año 1: T2 */
+        .bar-3 { grid-column: 4 / 5; }  /* Año 1: T4 */
+        .bar-4 { grid-column: 5 / 9; }  /* Año 2: T1 - T4 */
+        .bar-5 { grid-column: 10 / 11; } /* Año 3: T2 */
+
+        /* Quitar borde inferior en la última fila */
+        .gantt-row:last-child .task-info,
+        .gantt-row:last-child .task-timeline {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="gantt-container">
+        <h2 class="gantt-title">Cronograma d'Execució</h2>
+        
+        <div class="gantt-wrapper">
+            <!-- Headers -->
+            <div class="header-col">
+                <div class="header-task-title">Acció Proposada / Responsable</div>
+            </div>
+            
+            <div class="header-timeline">
+                <div class="years-row">
+                    <div class="year-label">ANY 1</div>
+                    <div class="year-label">ANY 2</div>
+                    <div class="year-label">ANY 3</div>
+                </div>
+                <div class="quarters-row">
+                    <!-- Any 1 -->
+                    <div class="quarter-label">T1</div>
+                    <div class="quarter-label">T2</div>
+                    <div class="quarter-label">T3</div>
+                    <div class="quarter-label">T4</div>
+                    <!-- Any 2 -->
+                    <div class="quarter-label">T1</div>
+                    <div class="quarter-label">T2</div>
+                    <div class="quarter-label">T3</div>
+                    <div class="quarter-label">T4</div>
+                    <!-- Any 3 -->
+                    <div class="quarter-label">T1</div>
+                    <div class="quarter-label">T2</div>
+                    <div class="quarter-label">T3</div>
+                    <div class="quarter-label">T4</div>
+                </div>
+            </div>
+
+            <!-- Fila 1 -->
+            <div class="gantt-row">
+                <div class="task-info">
+                    <div class="task-name">Contractació de consultoria i càlcul inicial de la petjada de carboni corporativa.</div>
+                    <div class="task-dept">Dept. de Medi Ambient</div>
+                </div>
+                <div class="task-timeline">
+                    <div class="bar bar-1"></div>
+                </div>
+            </div>
+
+            <!-- Fila 2 -->
+            <div class="gantt-row">
+                <div class="task-info">
+                    <div class="task-name">Constitució de la taula negociadora i signatura del Pla d'Igualtat intern.</div>
+                    <div class="task-dept">Dept. de Recursos Humans</div>
+                </div>
+                <div class="task-timeline">
+                    <div class="bar bar-2"></div>
+                </div>
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="gantt-row">
+                <div class="task-info">
+                    <div class="task-name">Redacció, enviament i signatura del Codi Ètic de Proveïdors per a contractes crítics.</div>
+                    <div class="task-dept">Dept. d'Operacions i Logística</div>
+                </div>
+                <div class="task-timeline">
+                    <div class="bar bar-3"></div>
+                </div>
+            </div>
+
+            <!-- Fila 4 -->
+            <div class="gantt-row">
+                <div class="task-info">
+                    <div class="task-name">Reenginyeria de la línia d'empaquetatge per a la transició a envasos totalment reciclables.</div>
+                    <div class="task-dept">Dept. de Recerca i Desenvolupament</div>
+                </div>
+                <div class="task-timeline">
+                    <div class="bar bar-4"></div>
+                </div>
+            </div>
+
+            <!-- Fila 5 -->
+            <div class="gantt-row">
+                <div class="task-info">
+                    <div class="task-name">Producció i llançament de les noves campanyes audiovisuals de pedagogia inclusiva.</div>
+                    <div class="task-dept">Dept. de Màrqueting i D. Pedagògic</div>
+                </div>
+                <div class="task-timeline">
+                    <div class="bar bar-5"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
